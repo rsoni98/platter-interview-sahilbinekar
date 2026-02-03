@@ -14,10 +14,11 @@ require "pry"
 class PriceCalculator
 
   def initialize
-    get_input
-    sale_product_group
-    calculate_product_total
-    calculate_sale_product_total
+    @input_list = get_input
+    @quantity_grouped_product_list = product_group
+    @total_product_unit_cost = calculate_product_total
+    @total_product_sales_cost, @final_table_data = calculate_sale_product_total
+    output_table
   end
 
     STORE_ITEMS = {
@@ -48,7 +49,18 @@ class PriceCalculator
     }
 
   def get_input
-    @input_list = gets.chomp
+    puts "Please enter all the items purchased separated by a comma"
+    gets.chomp
+  end
+
+  def output_table
+    puts format("\n%-10s %-10s %s", "Item", "Quantity", "Price")
+    puts "-" * 35
+
+    @final_table_data.each do |item|
+      puts format("%-10s %-10s $%s",item[0].capitalize, item[1]["qt"], item[1]["price"])
+    end
+    puts "\nTotal Price $#{@total_product_sales_cost} \nYou Saved $#{sprintf('%.2f', (@total_product_unit_cost - @total_product_sales_cost))} today"
   end
 
   def product_group
@@ -63,7 +75,7 @@ class PriceCalculator
   def sale_product_group
     sale_sorted_list = []
 
-    product_group.each do |item, count|
+    @quantity_grouped_product_list.each do |item, count|
       if STORE_ITEMS[item]["sale"]
         while count > 0
           grounp_by_qt = [STORE_ITEMS[item]["qt"], count].min
@@ -96,20 +108,13 @@ class PriceCalculator
         final_table_hash[item[0]]["price"]+= (STORE_ITEMS[item[0]]["unit_price"] * item[1])
       end
     end
-    # # p sale_total_cost
-    # p final_table_hash
-    # p "\n" 
-    # p sale_product_list
+
+    return sale_total_cost, final_table_hash
   end
-        # binding.pry
 
   def calculate_product_total
-    product_list = product_group
-    total_cost = 0
-    product_list.each do |item|
-      total_cost = total_cost + (STORE_ITEMS[item[0]]["unit_price"] * item[1])
-    end
-    total_cost
+    product_list = @quantity_grouped_product_list
+    product_list.inject(0) {|res, item| res + (STORE_ITEMS[item[0]]["unit_price"] * item[1])}
   end
 
 end
